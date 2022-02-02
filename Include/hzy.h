@@ -10,6 +10,7 @@
 #include <Eigen/Dense>
 #include "QSerialPort" //串口访问
 #include "QSerialPortInfo" //串口端口信息访问
+#include <QTimer>
 #define pi 3.14159265358979323846264338328
 
 struct EulerAngles {
@@ -45,12 +46,21 @@ public:
     explicit GainAngles(QObject *parent = nullptr);
 
 
-    void working(WiseGlove *g_pGlove0,QTableWidget* tableWidget, QSerialPort* SerialPort);
 
+    bool GetQuat(Eigen::Quaternionf & bluetooth); //从蓝牙得到四元数
 signals:
     void sendArray(QVector<float>* Angles);
 private:
+    QSerialPort* SerialPort = nullptr ;
+    QTimer* timer = nullptr;
 
+    WiseGlove *g_pGlove0= nullptr;
+    QTableWidget* tableWidget = nullptr;
+    Eigen::Quaternionf uparm,forarm, hand, bluetooth;
+public slots:
+    void onCreateTimer(WiseGlove *g_pGlove0,QTableWidget* tableWidget);
+    void onTimeout();
+    void working();
 
 };
 
@@ -62,6 +72,6 @@ EulerAngles ToEulerAngles(QUAT q); //四元数转换欧拉角
 Eigen::Quaternionf quatmul(Eigen::Quaternionf a, Eigen::Quaternionf b); //四元数乘法
 Eigen::Quaternionf quatconj(Eigen::Quaternionf a); //四元数共轭
 void QuattoEuler(Eigen::Quaternionf quat, float eular[3]);
-bool GetQuat(QSerialPort* SerialPort,Eigen::Quaternionf & bluetooth); //从蓝牙得到四元数
+
 /*****************************************/
 #endif // HZY_H

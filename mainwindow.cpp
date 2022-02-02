@@ -24,16 +24,16 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
-    QString thumb[39] = {"拇指MCP","拇指IP","食指MCP","食指PIP","食指DIP","中指MCP","中指PIP","中指DIP","无名指MCP","无名指PIP","无名指DIP",
+    QString thumb[43] = {"拇指MCP","拇指IP","食指MCP","食指PIP","食指DIP","中指MCP","中指PIP","中指DIP","无名指MCP","无名指PIP","无名指DIP",
                          "小指MCP","小指PIP","小指DIP","拇指CMC","拇指与食指夹角","食指与中指夹角","中指与环指夹角","环指与小指夹角",
                          "uparm.x","uparm.y","uparm.z","uparm.w","forearm.x","forearm.y","forearm.z","forearm.w",
                          "hand.x","hand.y","hand.z","hand.w","forearmzero.x","forearmzero.y","forearmzero.z","forearmzero.w",
-                        "handzero.x","handzero.y","handzero.z","handzero.w"};
+                        "handzero.x","handzero.y","handzero.z","handzero.w","bluetooth.x","bluetooth.y","bluetooth.z","bluetooth.w"};
     ui->setupUi(this);
 
-    ui->tableWidget->setRowCount(39);
+    ui->tableWidget->setRowCount(43);
     ui->tableWidget->setColumnCount(3);
-    for(int i= 0; i<39; i++){
+    for(int i= 0; i<43; i++){
         ui->tableWidget->setItem(i,0,new QTableWidgetItem(thumb[i]));
     }
     Serial_Init();
@@ -50,12 +50,14 @@ MainWindow::MainWindow(QWidget *parent)
     // 3. 将任务对象移动到某个子线程中
     ga->moveToThread(t1);
 
-    connect(this, &MainWindow::starting, ga, &GainAngles::working);
+    connect(ga,&GainAngles::sendArray, this, &MainWindow::displayAngles);
+    connect(this, &MainWindow::starting, ga, &GainAngles::onCreateTimer);
     connect(ui->StartGain, &QPushButton::clicked, this, [=]()
     {
-        emit starting(g_pGlove0,ui->tableWidget, SerialPort);
+        emit starting(g_pGlove0,ui->tableWidget);
         t1->start();
     });
+    qDebug() << " work thread id:" << QThread::currentThreadId();
 }
 
 MainWindow::~MainWindow()
@@ -67,27 +69,7 @@ MainWindow::~MainWindow()
 void MainWindow::on_Connect_glove_clicked()
 {
     /*******************************连接串口**************************************/
-    SerialPort = new QSerialPort();
-    SerialPort->setPortName(ui->SerialList->currentText());
 
-
-    if(SerialPort->open(QIODevice::ReadWrite))
-    {
-        SerialPort->setBaudRate(115200);
-        //设置数据位
-        SerialPort->setDataBits(QSerialPort::Data8);
-        //设置校验位
-        SerialPort->setParity(QSerialPort::NoParity);
-        //设置流控制
-        SerialPort->setFlowControl(QSerialPort::NoFlowControl);
-        //设置停止位
-        SerialPort->setStopBits(QSerialPort::OneStop);
-    }
-    else
-    {
-        QMessageBox::about(NULL, "提示", "串口没有打开！");
-        return;
-    }
 
     /****************************************************************************/
 
@@ -151,5 +133,14 @@ void MainWindow::Serial_Init()
     }
 
 
+}
+
+void MainWindow::displayAngles(QVector<float>* Angles)
+{
+
+    for(int i= 0; i<43; i++){
+        ui->tableWidget->setItem(i,1,new QTableWidgetItem(QString("%1").arg((*Angles)[i])));
+
+    }
 }
 

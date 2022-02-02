@@ -85,33 +85,77 @@ void QuattoEuler(Eigen::Quaternionf quat, float eular[3])  //x y z
 
 GainAngles::GainAngles(QObject *parent ): QObject(parent)
 {
+    SerialPort = new QSerialPort(this);
+    SerialPort->setPortName("COM11");
 
+
+    if(SerialPort->open(QIODevice::ReadWrite))
+    {
+        SerialPort->setBaudRate(115200);
+        //设置数据位
+        SerialPort->setDataBits(QSerialPort::Data8);
+        //设置校验位
+        SerialPort->setParity(QSerialPort::NoParity);
+        //设置流控制
+        SerialPort->setFlowControl(QSerialPort::NoFlowControl);
+        //设置停止位
+        SerialPort->setStopBits(QSerialPort::OneStop);
+    }
+    else
+    {
+        QMessageBox::about(NULL, "提示", "串口没有打开！");
+        return;
+    }
 }
 
-void GainAngles::working(WiseGlove *g_pGlove0,QTableWidget* tableWidget, QSerialPort* SerialPort)
+void GainAngles::working()
 {
+    QVector<float>* Angles = new QVector<float>(43);
     unsigned int validdata[2];
-    Eigen::Quaternionf uparm,forarm, hand, bluetooth;
+    float m_quat[16],quat[16]; //手臂传感器值位于m_quat[0]-m_quat[2]
+    char FrameState[1];
+    char Q[9];
+    FrameState[0] = 0;
+    short Q0L,Q0H,Q1L,Q1H,Q2L,Q2H,Q3L,Q3H;
     EulerAngles Uparm, Forearm, Wrist;
     float angle[19];  //临时存储角度变量
-    float m_quat[16],quat[16]; //手臂传感器值位于m_quat[0]-m_quat[2]
     float dispangle[19];  //用于屏幕显示传感器角度
-    SerialPort->readAll();
+    while(1)
+    {
+        while(!SerialPort->getChar(FrameState));
+        if(FrameState[0] == 0x55){
+           break;
 
-    QVector<float>* Angles = new QVector<float>(39);
-    while(1){
-        validdata[0] = g_pGlove0->GetAngle(angle);
-        g_pGlove0->GetQuat(m_quat); //w,x,y,z
-//       while(!GetQuat(SerialPort,bluetooth));
-        while(!SerialPort->write("hzy"));
+        }
 
-        if (validdata[0] > 0)  //数据有效
-        {
-            for (int i = 0; i < 19; i++)
-            {
-                dispangle[i] = angle[i];
-            }
-            //指间角度取反
+    }
+    while(1)
+    {
+        while(!SerialPort->getChar(FrameState));
+        if(FrameState[0] == 0x59){
+            while(!SerialPort->read(Q,9));
+
+            Q0L = (short)Q[0]&0x00ff ;Q0H = (short)Q[1]&0x00ff;Q1L = (short)Q[2]&0x00ff;Q1H= (short)Q[3]&0x00ff;Q2L= (short)Q[4]&0x00ff;Q2H= (short)Q[5]&0x00ff;Q3L= (short)Q[6]&0x00ff;Q3H= (short)Q[7]&0x00ff;
+
+
+            bluetooth.w() = (short)((Q0H << 8) | Q0L)/32768.0 ;
+            bluetooth.x() = (short)((Q1H << 8) | Q1L)/32768.0 ;
+            bluetooth.y() = (short)((Q2H << 8) | Q2L)/32768.0;
+            bluetooth.z() = (short)((Q3H << 8) | Q3L) /32768.0;
+
+            (*Angles)[39]  = bluetooth.x();  //x
+            (*Angles)[40]  = bluetooth.y();  //y
+            (*Angles)[41]  = bluetooth.z(); //z
+            (*Angles)[42]  = bluetooth.w(); //w
+            break;
+        }
+    }
+
+        SerialPort->readAll();
+        validdata[0] = g_pGlove0->GetAngle(dispangle);
+
+        g_pGlove0->GetQuat(m_quat);
+        if(validdata[0] > 0){
             dispangle[2] = 50.0 - dispangle[2] > 0 ? 50.0 - dispangle[2] : 0;//拇指与食指夹角
             dispangle[6] = 25.0 - dispangle[6] > 0 ? 25.0 - dispangle[6] : 0;//食指与中指夹角
             dispangle[10] = 25.0 - dispangle[10] > 0 ? 25.0 - dispangle[10] : 0;//中指与环指夹角
@@ -206,50 +250,95 @@ void GainAngles::working(WiseGlove *g_pGlove0,QTableWidget* tableWidget, QSerial
             (*Angles)[36] = quat[9] = handzero.y();  //y
             (*Angles)[37] = quat[10] = handzero.z(); //z
             (*Angles)[38] = quat[11] = handzero.w(); //w
+        }
+        emit sendArray(Angles);
 
-            Wrist = ToEulerAngles(handzero);
-            for(int i = 0; i < 39; i++)
-            {
-                tableWidget->setItem(i,1,new QTableWidgetItem(QString("%1").arg((*Angles)[i])));
-            }
-            QThread::msleep(200);
 
-        }//end_if (validdata[0] > 0)  //数据有效
-    }//end_while(1)
-    emit sendArray(Angles);
+
+
 
 }
 
 
-bool GetQuat(QSerialPort* SerialPort, Eigen::Quaternionf& bluetooth)
+bool GainAngles::GetQuat(Eigen::Quaternionf& bluetooth)
 {
 
+    qDebug() <<"已进入";
     char FrameState[1];
+    FrameState[0] = 0;
     char Q[9];
     short Q0L,Q0H,Q1L,Q1H,Q2L,Q2H,Q3L,Q3H;
-    while(!(SerialPort->read(FrameState,1)) )
+    static int x =0;
+    while(1)
     {
-        qDebug() <<"IMU读取失败";
-        qDebug("FrameState[0]:%x",FrameState[0]);
-    }; //如果接受失败或者接收的不是0x55则退出循环
-    while(!(SerialPort->getChar(FrameState)));
-    switch (*FrameState)
-    {
-        case 0x59:
-            if( -1 ==SerialPort->read(Q,9))
-            {
-                return false;
-            }
-            Q0L = Q[0];
-            bluetooth.w() = ((Q[1] << 8) | Q[0]) /32768;
-            bluetooth.x() = ((Q[3] << 8) | Q[2]) /32768;
-            bluetooth.y() = ((Q[5] << 8) | Q[4]) /32768;
-            bluetooth.z() = ((Q[7] << 8) | Q[6]) /32768;
-    default:
-        return false;
+            while(!SerialPort->getChar(FrameState));
 
     }
-    qDebug() <<"IMU采集成功";
-    return true;
+//    while(1)
+//    {
+//        if (SerialPort->waitForReadyRead(10))
+//        {
+//            SerialPort->getChar(FrameState);
+//        }
+//        if(FrameState[0] == 0x55)
+//            break;
+//        else
+//        {
+//            qDebug() <<"读取帧头失败";
+//            qDebug("FrameState: %x", FrameState[0]);
+//        }
 
+//    }
+//    while (FrameState[0] != 0x55)
+//    {
+//        qDebug() <<"读取帧头";
+//        while(!SerialPort->waitForReadyRead()){qDebug() <<"读取帧头2";}
+//        SerialPort->getChar(FrameState);
+//        qDebug() <<"读取帧头3";
+//    }//如果接受失败或者接收的不是0x55则退出循环
+//    qDebug() <<"成功读取帧头";
+//    while (!SerialPort->waitForReadyRead(10)){qDebug() <<"读取标识符";}
+//    SerialPort->getChar(FrameState);
+//    switch (FrameState[0])
+//    {
+//        case 0x59:
+//            qDebug() <<"IMU采集成功";
+//            while (!SerialPort->waitForReadyRead(10)){}
+//            if( -1 ==SerialPort->read(Q,9))
+//            {
+//                return false;
+//            }
+
+//            bluetooth.w() = ((Q[1] << 8) | Q[0]) /32768;
+//            bluetooth.x() = ((Q[3] << 8) | Q[2]) /32768;
+//            bluetooth.y() = ((Q[5] << 8) | Q[4]) /32768;
+//            bluetooth.z() = ((Q[7] << 8) | Q[6]) /32768;
+//        return true;
+//        break;
+//    default:
+//        return false;
+
+//}
+
+
+
+//    return true;
+    return true;
+}
+
+
+void GainAngles::onCreateTimer(WiseGlove *g_pGlove0,QTableWidget* tableWidget)
+{
+    //关键点：在子线程中创建QTimer的对象
+    timer = new QTimer(this);
+    timer->setInterval(200);
+    this->g_pGlove0 = g_pGlove0;
+
+    connect(timer, SIGNAL(timeout()), this, SLOT(working()));
+    timer->start();
+}
+
+void GainAngles::onTimeout()
+{
+    qDebug() << " work thread id:" << QThread::currentThreadId(); //打印出线程ID，看看是否UI线程的ID不同
 }

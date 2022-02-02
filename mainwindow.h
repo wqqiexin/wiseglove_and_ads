@@ -24,10 +24,12 @@ private slots:
 
     void on_pushButton_clicked();
 
+    void displayAngles(QVector<float>* Angles);
+
 private:
     Ui::MainWindow *ui;
     QSerialPort* SerialPort;
 signals:
-    void starting(WiseGlove * g_pGlove0, QTableWidget * tableWidget, QSerialPort* SerialPort);
+    void starting(WiseGlove * g_pGlove0, QTableWidget * tableWidget);
 };
 #endif // MAINWINDOW_H
