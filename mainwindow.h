@@ -29,6 +29,7 @@ private slots:
 private:
     Ui::MainWindow *ui;
     QSerialPort* SerialPort;
+    Eigen::Quaternionf uparm,forarm, hand, bluetooth,handzero,forearmzero;
 signals:
     void starting(WiseGlove * g_pGlove0, QTableWidget * tableWidget);
 };

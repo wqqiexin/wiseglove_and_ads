@@ -8,6 +8,7 @@
 #include <QVector>
 #include <QString>
 #include <QStandardItemModel>
+#include <iostream>
 /************指针变量***************/
 //wiseglove指针变量，并初始化
 WiseGlove *g_pGlove0 = NULL;
@@ -137,7 +138,42 @@ void MainWindow::Serial_Init()
 
 void MainWindow::displayAngles(QVector<float>* Angles)
 {
+    uparm.x() = (*Angles)[19]; //x
+    uparm.y() = (*Angles)[20]; //y
+    uparm.z() = (*Angles)[21]; //z
+    uparm.w() = (*Angles)[22]; //w
 
+
+    //肘关节
+    forarm.x() = (*Angles)[23]; //x
+    forarm.y() = (*Angles)[24]; //y
+    forarm.z() = (*Angles)[25]; //z
+    forarm.w() = (*Angles)[26]; //w
+
+
+    //腕关节
+    hand.x() = (*Angles)[27];  //x
+    hand.y() = (*Angles)[28];  //y
+    hand.z() = (*Angles)[29]; //z
+    hand.w() = (*Angles)[30]; //w
+
+    forearmzero.x() = (*Angles)[31];  //x
+    forearmzero.y() = (*Angles)[32];  //y
+    forearmzero.z() = (*Angles)[33]; //z
+    forearmzero.w() = (*Angles)[34]; //w
+
+    handzero.x() = (*Angles)[35];  //x
+    handzero.y() = (*Angles)[36];  //y
+    handzero.z() = (*Angles)[37];    //z
+    handzero.w() = (*Angles)[38]; //w
+
+
+    bluetooth.x() = (*Angles)[39];  //x
+    bluetooth.y() = (*Angles)[40];  //y
+    bluetooth.z() = (*Angles)[41]; //z
+    bluetooth.w() = (*Angles)[42]; //w
+
+    std::cout << bluetooth.normalized().toRotationMatrix();
     for(int i= 0; i<43; i++){
         ui->tableWidget->setItem(i,1,new QTableWidgetItem(QString("%1").arg((*Angles)[i])));
 
