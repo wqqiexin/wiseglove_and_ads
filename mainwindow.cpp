@@ -25,14 +25,14 @@ MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
-    QString thumb[43] = {"拇指MCP","拇指IP","食指MCP","食指PIP","食指DIP","中指MCP","中指PIP","中指DIP","无名指MCP","无名指PIP","无名指DIP",
+    QString thumb[47] = {"拇指MCP","拇指IP","食指MCP","食指PIP","食指DIP","中指MCP","中指PIP","中指DIP","无名指MCP","无名指PIP","无名指DIP",
                          "小指MCP","小指PIP","小指DIP","拇指CMC","拇指与食指夹角","食指与中指夹角","中指与环指夹角","环指与小指夹角",
                          "uparm.x","uparm.y","uparm.z","uparm.w","forearm.x","forearm.y","forearm.z","forearm.w",
                          "hand.x","hand.y","hand.z","hand.w","forearmzero.x","forearmzero.y","forearmzero.z","forearmzero.w",
-                        "handzero.x","handzero.y","handzero.z","handzero.w","bluetooth.x","bluetooth.y","bluetooth.z","bluetooth.w"};
+                        "handzero.x","handzero.y","handzero.z","handzero.w","bluetooth.x","bluetooth.y","bluetoothmodified.z","bluetooth.w","bluetoothmodified.x","bluetoothmodified.y","bluetoothmodified.z","bluetoothmodified.w"};
     ui->setupUi(this);
 
-    ui->tableWidget->setRowCount(43);
+    ui->tableWidget->setRowCount(47);
     ui->tableWidget->setColumnCount(3);
     for(int i= 0; i<43; i++){
         ui->tableWidget->setItem(i,0,new QTableWidgetItem(thumb[i]));
@@ -42,6 +42,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     // 1. 创建子线程对象
     QThread* t1 = new QThread;
+    QThread* t2 = new QThread;
 
 
     // 2. 创建任务类的对象
@@ -59,6 +60,7 @@ MainWindow::MainWindow(QWidget *parent)
         t1->start();
     });
     qDebug() << " work thread id:" << QThread::currentThreadId();
+    RecordQuat.w() =1; RecordQuat.x()=0;RecordQuat.y() = 0;RecordQuat.z() = 0;
 }
 
 MainWindow::~MainWindow()
@@ -124,6 +126,8 @@ void MainWindow::on_pushButton_clicked()
         g_pGlove0->SetCalibMode(CALIB_AUTO);
         g_pGlove0->ResetQuat();
     }
+//    RecordQuat.w() = bluetooth.w();RecordQuat.x() = bluetooth.x();RecordQuat.y() = bluetooth.y();RecordQuat.z() = bluetooth.z();
+
 
 }
 void MainWindow::Serial_Init()
@@ -173,7 +177,9 @@ void MainWindow::displayAngles(QVector<float>* Angles)
     bluetooth.z() = (*Angles)[41]; //z
     bluetooth.w() = (*Angles)[42]; //w
 
-    std::cout << bluetooth.normalized().toRotationMatrix();
+
+    bluetoothmodified = quatmul(RecordQuat,bluetooth);
+//    std::cout << bluetooth.normalized().toRotationMatrix();
     for(int i= 0; i<43; i++){
         ui->tableWidget->setItem(i,1,new QTableWidgetItem(QString("%1").arg((*Angles)[i])));
 

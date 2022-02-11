@@ -29,7 +29,9 @@ private slots:
 private:
     Ui::MainWindow *ui;
     QSerialPort* SerialPort;
-    Eigen::Quaternionf uparm,forarm, hand, bluetooth,handzero,forearmzero;
+    Eigen::Quaternionf uparm,forarm, hand, bluetooth,handzero,forearmzero,bluetoothmodified;
+    Eigen::Quaternionf RecordQuat;
+    const Eigen::Quaternionf QuatInit = Eigen::Quaternionf (1.0,0,0,0);
 signals:
     void starting(WiseGlove * g_pGlove0, QTableWidget * tableWidget);
 };

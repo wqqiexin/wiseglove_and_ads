@@ -86,7 +86,7 @@ void QuattoEuler(Eigen::Quaternionf quat, float eular[3])  //x y z
 GainAngles::GainAngles(QObject *parent ): QObject(parent)
 {
     SerialPort = new QSerialPort(this);
-    SerialPort->setPortName("COM11");
+    SerialPort->setPortName("COM12");
 
 
     if(SerialPort->open(QIODevice::ReadWrite))
@@ -107,6 +107,13 @@ GainAngles::GainAngles(QObject *parent ): QObject(parent)
         return;
     }
 }
+
+
+CacluateAngles::CacluateAngles(QObject *parent ): QObject(parent)
+{
+
+}
+
 
 void GainAngles::working()
 {
@@ -217,8 +224,13 @@ void GainAngles::working()
             Eigen::Quaternionf uparmconj = quatconj(uparm);
             Eigen::Quaternionf forearmconj = quatconj(forarm);
 
+
+
             Eigen::Quaternionf forearmzero = quatmul(uparmconj, forarm);
             Eigen::Quaternionf handzero = quatmul(forearmconj, hand);
+
+            std::cout << forearmzero.toRotationMatrix() <<std::endl;
+            std::cout <<std::endl;
             //xy zy
             //xz
             //肩膀关节
@@ -259,6 +271,10 @@ void GainAngles::working()
 
 }
 
+void CacluateAngles::working()
+{
+
+}
 
 bool GainAngles::GetQuat(Eigen::Quaternionf& bluetooth)
 {

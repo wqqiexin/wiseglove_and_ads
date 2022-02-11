@@ -11,6 +11,7 @@
 #include "QSerialPort" //串口访问
 #include "QSerialPortInfo" //串口端口信息访问
 #include <QTimer>
+#include <iostream>
 #define pi 3.14159265358979323846264338328
 
 struct EulerAngles {
@@ -60,6 +61,22 @@ private:
 public slots:
     void onCreateTimer(WiseGlove *g_pGlove0,QTableWidget* tableWidget);
     void onTimeout();
+    void working();
+
+};
+
+class CacluateAngles:public QObject
+{
+    Q_OBJECT
+public:
+    explicit CacluateAngles(QObject *parent = nullptr);
+
+signals:
+    void sendAngles(QVector<float>* Angles);
+private:
+    QTimer* timer = nullptr;
+    QTableWidget* tableWidget = nullptr;
+public slots:
     void working();
 
 };
