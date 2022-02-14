@@ -1,6 +1,6 @@
 #include "hzy.h"
 
-EulerAngles ToEulerAngles(Eigen::Quaternionf q)
+EulerAngles ToEulerAngles(Eigen::Quaterniond q)
 {
     EulerAngles angles;
 
@@ -24,7 +24,7 @@ EulerAngles ToEulerAngles(Eigen::Quaternionf q)
     return angles;
 }
 
-Eigen::Quaternionf quatmul(Eigen::Quaternionf a, Eigen::Quaternionf b)
+Eigen::Quaterniond quatmul(Eigen::Quaterniond a, Eigen::Quaterniond b)
 {
     float xn, yn, zn, wn;
     wn = a.w() * b.w() - a.x() * b.x() - a.y() * b.y() - a.z() * b.z();
@@ -33,7 +33,7 @@ Eigen::Quaternionf quatmul(Eigen::Quaternionf a, Eigen::Quaternionf b)
     zn = a.w() * b.z() + a.x() * b.y() - a.y() * b.x() + a.z() * b.w();
 
     //Quaternion q1 = q0 * _qOrigin;
-    Eigen:: Quaternionf temp;
+    Eigen:: Quaterniond temp;
     temp.w() = wn;
     temp.x() = xn;
     temp.y() = yn;
@@ -58,9 +58,9 @@ Eigen::Quaternionf quatmul(Eigen::Quaternionf a, Eigen::Quaternionf b)
     return temp;
 }
 
-Eigen::Quaternionf quatconj(Eigen::Quaternionf a)
+Eigen::Quaterniond quatconj(Eigen::Quaterniond a)
 {
-    Eigen::Quaternionf temp;
+    Eigen::Quaterniond temp;
     temp.w() = a.w();
     temp.x() = -a.x();
     temp.y() = -a.y();
@@ -69,7 +69,7 @@ Eigen::Quaternionf quatconj(Eigen::Quaternionf a)
     return temp;
 }
 
-void QuattoEuler(Eigen::Quaternionf quat, float eular[3])  //x y z
+void QuattoEuler(Eigen::Quaterniond quat, float eular[3])  //x y z
 {
 
     double sqw = quat.w()*quat.w();
@@ -86,7 +86,13 @@ void QuattoEuler(Eigen::Quaternionf quat, float eular[3])  //x y z
 GainAngles::GainAngles(QObject *parent ): QObject(parent)
 {
     SerialPort = new QSerialPort(this);
-    SerialPort->setPortName("COM12");
+
+}
+
+void GainAngles::openSerial(QString Name)
+{
+
+    SerialPort->setPortName(Name);
 
 
     if(SerialPort->open(QIODevice::ReadWrite))
@@ -100,6 +106,7 @@ GainAngles::GainAngles(QObject *parent ): QObject(parent)
         SerialPort->setFlowControl(QSerialPort::NoFlowControl);
         //设置停止位
         SerialPort->setStopBits(QSerialPort::OneStop);
+        return ;
     }
     else
     {
@@ -108,16 +115,41 @@ GainAngles::GainAngles(QObject *parent ): QObject(parent)
     }
 }
 
-
-CacluateAngles::CacluateAngles(QObject *parent ): QObject(parent)
+CalcuateAngles::CalcuateAngles(QObject *parent ): QObject(parent)
 {
+    Slist1 = Eigen::MatrixXd(6, 3);
+    Slist2 = Eigen::MatrixXd(6, 3);
+    Slist3 = Eigen::MatrixXd(6, 3);
+    Slist1 << 0,0,0,
+            0,-1,0,
+            1,0,1,0,
+            0,0,0,
+            0,0,0,
+            0,0,0;
+    Slist2 << 0,0,0,
+              0,1,0,
+              1,0,1,
+              0,0,0,
+              0,0,0,
+              0,0,0;
+    Slist3 << 0,0,0,
+            0,-1,0,
+            1,0,1,0,
+            0,0,0,
+            0,0,0,
+            0,0,0;
+    handT =  Eigen::Matrix4d().Identity();
+    forearmT =  Eigen::Matrix4d().Identity();
+    uparmT =  Eigen::Matrix4d().Identity();
+//    thetalistHand = Eigen::VectorXd::Zero(4);
+//    thetalistForearm = Eigen::VectorXd::Zero(4);
 
 }
 
 
 void GainAngles::working()
 {
-    QVector<float>* Angles = new QVector<float>(43);
+    QVector<double>* Angles = new QVector<double>(43);
     unsigned int validdata[2];
     float m_quat[16],quat[16]; //手臂传感器值位于m_quat[0]-m_quat[2]
     char FrameState[1];
@@ -221,16 +253,16 @@ void GainAngles::working()
             uparm.x() = quat[8];
             uparm.y() = quat[9];
             uparm.z() = quat[10];
-            Eigen::Quaternionf uparmconj = quatconj(uparm);
-            Eigen::Quaternionf forearmconj = quatconj(forarm);
+            Eigen::Quaterniond uparmconj = quatconj(uparm);
+            Eigen::Quaterniond forearmconj = quatconj(forarm);
 
 
 
-            Eigen::Quaternionf forearmzero = quatmul(uparmconj, forarm);
-            Eigen::Quaternionf handzero = quatmul(forearmconj, hand);
+            Eigen::Quaterniond forearmzero = quatmul(uparmconj, forarm);
+            Eigen::Quaterniond handzero = quatmul(forearmconj, hand);
 
-            std::cout << forearmzero.toRotationMatrix() <<std::endl;
-            std::cout <<std::endl;
+//            std::cout << forearmzero.toRotationMatrix() <<std::endl;
+//            std::cout <<std::endl;
             //xy zy
             //xz
             //肩膀关节
@@ -271,70 +303,64 @@ void GainAngles::working()
 
 }
 
-void CacluateAngles::working()
+void CalcuateAngles::working(QVector<double>* Angles)
 {
+    Eigen::Matrix4d M = Eigen::MatrixXd::Identity(4,4);
+
+    forearmzero.x() = (*Angles)[31];  //x
+    forearmzero.y() = (*Angles)[32];  //y
+    forearmzero.z() = (*Angles)[33]; //z
+    forearmzero.w() =(*Angles)[34]; //w
+
+    handzero.x() = (*Angles)[35];  //x
+    handzero.y() = (*Angles)[36];  //y
+    handzero.z() = (*Angles)[37];    //z
+    handzero.w() = (*Angles)[38]; //w
+    handT.topLeftCorner(3,3) = handzero.normalized().toRotationMatrix();
+    forearmT.topLeftCorner(3,3) = forearmzero.normalized().toRotationMatrix();
+
+
+
+
+
+
+
+    Eigen::VectorXd thetalistHand = Eigen::VectorXd::Zero(3);
+    Eigen::VectorXd thetalistForearm = Eigen::VectorXd::Zero(3);
+
+    bool iRetHand = mr::IKinSpace(Slist1, M, handT, thetalistHand, eomg, ev);
+
+    bool iRetForearm = mr::IKinSpace(Slist1, M, forearmT, thetalistForearm, eomg, ev);
+    if(std::abs(1-handT(2,2)) < 0.01)
+        thetalistHand = Eigen::VectorXd::Zero(3);
+    std::cout << "iRetHand:" << iRetHand << std::endl;
+    for(int i = 0; i < 3; i++)
+    {
+        while(thetalistHand[i] > M_PI)
+        {
+            thetalistHand[i] -= 2*M_PI;
+        }
+        while(thetalistHand[i] < -M_PI)
+        {
+            thetalistHand[i] += 2*M_PI;
+        }
+        while(thetalistForearm[i] > M_PI)
+        {
+            thetalistForearm[i] -= 2*M_PI;
+        }
+        while(thetalistForearm[i] < -M_PI)
+        {
+            thetalistForearm[i] += 2*M_PI;
+        }
+    }
+    std::cout << "thetalistHand:" << thetalistHand*180/M_PI << std::endl;
+
 
 }
 
-bool GainAngles::GetQuat(Eigen::Quaternionf& bluetooth)
+bool GainAngles::GetQuat(Eigen::Quaterniond& bluetooth)
 {
 
-    qDebug() <<"已进入";
-    char FrameState[1];
-    FrameState[0] = 0;
-    char Q[9];
-    short Q0L,Q0H,Q1L,Q1H,Q2L,Q2H,Q3L,Q3H;
-    static int x =0;
-    while(1)
-    {
-            while(!SerialPort->getChar(FrameState));
-
-    }
-//    while(1)
-//    {
-//        if (SerialPort->waitForReadyRead(10))
-//        {
-//            SerialPort->getChar(FrameState);
-//        }
-//        if(FrameState[0] == 0x55)
-//            break;
-//        else
-//        {
-//            qDebug() <<"读取帧头失败";
-//            qDebug("FrameState: %x", FrameState[0]);
-//        }
-
-//    }
-//    while (FrameState[0] != 0x55)
-//    {
-//        qDebug() <<"读取帧头";
-//        while(!SerialPort->waitForReadyRead()){qDebug() <<"读取帧头2";}
-//        SerialPort->getChar(FrameState);
-//        qDebug() <<"读取帧头3";
-//    }//如果接受失败或者接收的不是0x55则退出循环
-//    qDebug() <<"成功读取帧头";
-//    while (!SerialPort->waitForReadyRead(10)){qDebug() <<"读取标识符";}
-//    SerialPort->getChar(FrameState);
-//    switch (FrameState[0])
-//    {
-//        case 0x59:
-//            qDebug() <<"IMU采集成功";
-//            while (!SerialPort->waitForReadyRead(10)){}
-//            if( -1 ==SerialPort->read(Q,9))
-//            {
-//                return false;
-//            }
-
-//            bluetooth.w() = ((Q[1] << 8) | Q[0]) /32768;
-//            bluetooth.x() = ((Q[3] << 8) | Q[2]) /32768;
-//            bluetooth.y() = ((Q[5] << 8) | Q[4]) /32768;
-//            bluetooth.z() = ((Q[7] << 8) | Q[6]) /32768;
-//        return true;
-//        break;
-//    default:
-//        return false;
-
-//}
 
 
 

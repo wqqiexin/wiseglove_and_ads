@@ -47,17 +47,25 @@ MainWindow::MainWindow(QWidget *parent)
 
     // 2. 创建任务类的对象
     GainAngles* ga = new GainAngles;
-
+    CalcuateAngles* ca = new CalcuateAngles;
 
     // 3. 将任务对象移动到某个子线程中
     ga->moveToThread(t1);
+    ca->moveToThread(t2);
+
 
     connect(ga,&GainAngles::sendArray, this, &MainWindow::displayAngles);
+    connect(ga,&GainAngles::sendArray, ca, &CalcuateAngles::working);
+    connect(this,&MainWindow::sendName,ga,&GainAngles::openSerial);
     connect(this, &MainWindow::starting, ga, &GainAngles::onCreateTimer);
+
+
     connect(ui->StartGain, &QPushButton::clicked, this, [=]()
     {
         emit starting(g_pGlove0,ui->tableWidget);
+        emit sendName(ui->SerialList->currentText());
         t1->start();
+        t2->start();
     });
     qDebug() << " work thread id:" << QThread::currentThreadId();
     RecordQuat.w() =1; RecordQuat.x()=0;RecordQuat.y() = 0;RecordQuat.z() = 0;
@@ -140,7 +148,7 @@ void MainWindow::Serial_Init()
 
 }
 
-void MainWindow::displayAngles(QVector<float>* Angles)
+void MainWindow::displayAngles(QVector<double>* Angles)
 {
     uparm.x() = (*Angles)[19]; //x
     uparm.y() = (*Angles)[20]; //y
@@ -182,7 +190,6 @@ void MainWindow::displayAngles(QVector<float>* Angles)
 //    std::cout << bluetooth.normalized().toRotationMatrix();
     for(int i= 0; i<43; i++){
         ui->tableWidget->setItem(i,1,new QTableWidgetItem(QString("%1").arg((*Angles)[i])));
-
     }
 }
 

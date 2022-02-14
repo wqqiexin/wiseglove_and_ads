@@ -24,15 +24,17 @@ private slots:
 
     void on_pushButton_clicked();
 
-    void displayAngles(QVector<float>* Angles);
+    void displayAngles(QVector<double>* Angles);
 
 private:
     Ui::MainWindow *ui;
     QSerialPort* SerialPort;
-    Eigen::Quaternionf uparm,forarm, hand, bluetooth,handzero,forearmzero,bluetoothmodified;
-    Eigen::Quaternionf RecordQuat;
-    const Eigen::Quaternionf QuatInit = Eigen::Quaternionf (1.0,0,0,0);
+    Eigen::Quaterniond uparm,forarm, hand, bluetooth,handzero,forearmzero,bluetoothmodified;
+    Eigen::Quaterniond RecordQuat;
+    const Eigen::Quaterniond QuatInit = Eigen::Quaterniond (1.0,0,0,0);
+
 signals:
     void starting(WiseGlove * g_pGlove0, QTableWidget * tableWidget);
+    void sendName(QString serialName);
 };
 #endif // MAINWINDOW_H

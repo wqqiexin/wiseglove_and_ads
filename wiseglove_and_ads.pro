@@ -12,11 +12,13 @@ RC_ICONS =xiaohui.ico
 
 SOURCES += \
     Src/hzy.cpp \
+    Src/modern_robotics.cpp \
     main.cpp \
     mainwindow.cpp
 
 HEADERS += \
     Include/hzy.h \
+    Include/modern_robotics.h \
     mainwindow.h
 
 FORMS += \
@@ -38,3 +40,6 @@ INCLUDEPATH += C:\eigen-3.4.0
 win32:CONFIG(release, debug|release): LIBS += -L$$PWD/Dll/.. -lWISEGLOVE
 LIBS += $$PWD/Lib/WISEGLOVE.lib
 win32: LIBS += -L$$PWD/./ -lWISEGLOVE
+
+
+

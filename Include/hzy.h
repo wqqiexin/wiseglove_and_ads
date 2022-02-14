@@ -12,6 +12,7 @@
 #include "QSerialPortInfo" //串口端口信息访问
 #include <QTimer>
 #include <iostream>
+#include "modern_robotics.h"
 #define pi 3.14159265358979323846264338328
 
 struct EulerAngles {
@@ -48,36 +49,46 @@ public:
 
 
 
-    bool GetQuat(Eigen::Quaternionf & bluetooth); //从蓝牙得到四元数
+    bool GetQuat(Eigen::Quaterniond & bluetooth); //从蓝牙得到四元数
 signals:
-    void sendArray(QVector<float>* Angles);
+    void sendArray(QVector<double>* Angles);
 private:
     QSerialPort* SerialPort = nullptr ;
+
     QTimer* timer = nullptr;
 
     WiseGlove *g_pGlove0= nullptr;
     QTableWidget* tableWidget = nullptr;
-    Eigen::Quaternionf uparm,forarm, hand, bluetooth;
+    Eigen::Quaterniond uparm,forarm, hand, bluetooth;
 public slots:
     void onCreateTimer(WiseGlove *g_pGlove0,QTableWidget* tableWidget);
     void onTimeout();
     void working();
+    void openSerial(QString Name);
+
 
 };
 
-class CacluateAngles:public QObject
+class CalcuateAngles:public QObject
 {
     Q_OBJECT
 public:
-    explicit CacluateAngles(QObject *parent = nullptr);
+    explicit CalcuateAngles(QObject *parent = nullptr);
 
 signals:
     void sendAngles(QVector<float>* Angles);
 private:
     QTimer* timer = nullptr;
     QTableWidget* tableWidget = nullptr;
+    Eigen::MatrixXd Slist1,Slist2,Slist3;
+    Eigen::Quaterniond uparmzero,forearmzero, handzero;
+    Eigen::Matrix4d handT, forearmT,uparmT;
+    double eomg = 0.001;
+    double ev = 0.001;
+//    Eigen::VectorXd thetalistHand;
+//    Eigen::VectorXd thetalistForearm;
 public slots:
-    void working();
+    void working(QVector<double>* Angles);
 
 };
 
@@ -86,9 +97,9 @@ public slots:
 
 /**************四元数相关函数******************/
 EulerAngles ToEulerAngles(QUAT q); //四元数转换欧拉角
-Eigen::Quaternionf quatmul(Eigen::Quaternionf a, Eigen::Quaternionf b); //四元数乘法
-Eigen::Quaternionf quatconj(Eigen::Quaternionf a); //四元数共轭
-void QuattoEuler(Eigen::Quaternionf quat, float eular[3]);
+Eigen::Quaterniond quatmul(Eigen::Quaterniond a, Eigen::Quaterniond b); //四元数乘法
+Eigen::Quaterniond quatconj(Eigen::Quaterniond a); //四元数共轭
+void QuattoEuler(Eigen::Quaterniond quat, float eular[3]);
 
 /*****************************************/
 #endif // HZY_H
