@@ -36,5 +36,6 @@ private:
 signals:
     void starting(WiseGlove * g_pGlove0, QTableWidget * tableWidget);
     void sendName(QString serialName);
+    void ResetQuat();
 };
 #endif // MAINWINDOW_H

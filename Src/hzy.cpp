@@ -149,7 +149,7 @@ CalcuateAngles::CalcuateAngles(QObject *parent ): QObject(parent)
 
 void GainAngles::working()
 {
-    QVector<double>* Angles = new QVector<double>(43);
+    QVector<double>* Angles = new QVector<double>(47);
     unsigned int validdata[2];
     float m_quat[16],quat[16]; //手臂传感器值位于m_quat[0]-m_quat[2]
     char FrameState[1];
@@ -181,11 +181,12 @@ void GainAngles::working()
             bluetooth.x() = (short)((Q1H << 8) | Q1L)/32768.0 ;
             bluetooth.y() = (short)((Q2H << 8) | Q2L)/32768.0;
             bluetooth.z() = (short)((Q3H << 8) | Q3L) /32768.0;
+            bluetoothModified = quatmul(recordQuat,bluetooth);
 
-            (*Angles)[39]  = bluetooth.x();  //x
-            (*Angles)[40]  = bluetooth.y();  //y
-            (*Angles)[41]  = bluetooth.z(); //z
-            (*Angles)[42]  = bluetooth.w(); //w
+            (*Angles)[39]  = bluetoothModified.x();  //x
+            (*Angles)[40]  = bluetoothModified.y();  //y
+            (*Angles)[41]  = bluetoothModified.z(); //z
+            (*Angles)[42]  = bluetoothModified.w(); //w
             break;
         }
     }
@@ -255,7 +256,7 @@ void GainAngles::working()
             uparm.z() = quat[10];
             Eigen::Quaterniond uparmconj = quatconj(uparm);
             Eigen::Quaterniond forearmconj = quatconj(forarm);
-
+            Eigen::Quaterniond uparmzero = quatmul(bluetoothModified,uparm);
 
 
             Eigen::Quaterniond forearmzero = quatmul(uparmconj, forarm);
@@ -294,6 +295,11 @@ void GainAngles::working()
             (*Angles)[36] = quat[9] = handzero.y();  //y
             (*Angles)[37] = quat[10] = handzero.z(); //z
             (*Angles)[38] = quat[11] = handzero.w(); //w
+
+            (*Angles)[43] = quat[8] = uparmzero.x();  //x
+            (*Angles)[44] = quat[9] = uparmzero.y();  //y
+            (*Angles)[45] = quat[10] = uparmzero.z(); //z
+            (*Angles)[46] = quat[11] = uparmzero.w(); //w
         }
         emit sendArray(Angles);
 
@@ -316,8 +322,15 @@ void CalcuateAngles::working(QVector<double>* Angles)
     handzero.y() = (*Angles)[36];  //y
     handzero.z() = (*Angles)[37];    //z
     handzero.w() = (*Angles)[38]; //w
+
+    uparmzero.x() = (*Angles)[43];
+    uparmzero.y() = (*Angles)[44];
+    uparmzero.z() = (*Angles)[45];
+    uparmzero.w() = (*Angles)[46];
+
     handT.topLeftCorner(3,3) = handzero.normalized().toRotationMatrix();
     forearmT.topLeftCorner(3,3) = forearmzero.normalized().toRotationMatrix();
+    uparmT.topLeftCorner(3,3) = uparmzero.normalized().toRotationMatrix();
 
 
 
@@ -327,13 +340,21 @@ void CalcuateAngles::working(QVector<double>* Angles)
 
     Eigen::VectorXd thetalistHand = Eigen::VectorXd::Zero(3);
     Eigen::VectorXd thetalistForearm = Eigen::VectorXd::Zero(3);
-
+    Eigen::VectorXd thetalistUparm = Eigen::VectorXd::Zero(3);
     bool iRetHand = mr::IKinSpace(Slist1, M, handT, thetalistHand, eomg, ev);
 
-    bool iRetForearm = mr::IKinSpace(Slist1, M, forearmT, thetalistForearm, eomg, ev);
+    bool iRetForearm = mr::IKinSpace(Slist2, M, forearmT, thetalistForearm, eomg, ev);
+
+    bool iRetUparm = mr::IKinSpace(Slist3, M, uparmT, thetalistUparm, eomg, ev);
+
     if(std::abs(1-handT(2,2)) < 0.01)
         thetalistHand = Eigen::VectorXd::Zero(3);
-    std::cout << "iRetHand:" << iRetHand << std::endl;
+    if(std::abs(1-uparmT(2,2)) < 0.01)
+        thetalistUparm = Eigen::VectorXd::Zero(3);
+    if(std::abs(1-forearmT(2,2)) < 0.01)
+        thetalistForearm = Eigen::VectorXd::Zero(3);
+
+
     for(int i = 0; i < 3; i++)
     {
         while(thetalistHand[i] > M_PI)
@@ -352,6 +373,14 @@ void CalcuateAngles::working(QVector<double>* Angles)
         {
             thetalistForearm[i] += 2*M_PI;
         }
+        while(thetalistUparm[i] > M_PI)
+        {
+            thetalistUparm[i] -= 2*M_PI;
+        }
+        while(thetalistUparm[i] < -M_PI)
+        {
+            thetalistUparm[i] += 2*M_PI;
+        }
     }
     std::cout << "thetalistHand:" << thetalistHand*180/M_PI << std::endl;
 
@@ -368,6 +397,11 @@ bool GainAngles::GetQuat(Eigen::Quaterniond& bluetooth)
     return true;
 }
 
+
+void GainAngles::resetQuat()
+{
+    recordQuat = bluetooth.conjugate();
+}
 
 void GainAngles::onCreateTimer(WiseGlove *g_pGlove0,QTableWidget* tableWidget)
 {

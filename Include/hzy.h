@@ -59,13 +59,14 @@ private:
 
     WiseGlove *g_pGlove0= nullptr;
     QTableWidget* tableWidget = nullptr;
-    Eigen::Quaterniond uparm,forarm, hand, bluetooth;
+    Eigen::Quaterniond uparm,forarm, hand, bluetooth,bluetoothModified;
+    Eigen::Quaterniond recordQuat = Eigen::Quaterniond(1,0,0,0);
 public slots:
     void onCreateTimer(WiseGlove *g_pGlove0,QTableWidget* tableWidget);
     void onTimeout();
     void working();
     void openSerial(QString Name);
-
+    void resetQuat();
 
 };
 
@@ -83,12 +84,14 @@ private:
     Eigen::MatrixXd Slist1,Slist2,Slist3;
     Eigen::Quaterniond uparmzero,forearmzero, handzero;
     Eigen::Matrix4d handT, forearmT,uparmT;
-    double eomg = 0.001;
+    double eomg = 0.01;
     double ev = 0.001;
+    Eigen::Quaterniond recordQuat = Eigen::Quaterniond(1,0,0,0);
 //    Eigen::VectorXd thetalistHand;
 //    Eigen::VectorXd thetalistForearm;
 public slots:
     void working(QVector<double>* Angles);
+
 
 };
 

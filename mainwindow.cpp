@@ -57,6 +57,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(ga,&GainAngles::sendArray, this, &MainWindow::displayAngles);
     connect(ga,&GainAngles::sendArray, ca, &CalcuateAngles::working);
     connect(this,&MainWindow::sendName,ga,&GainAngles::openSerial);
+    connect(this, &MainWindow::ResetQuat,ga, &GainAngles::resetQuat);
     connect(this, &MainWindow::starting, ga, &GainAngles::onCreateTimer);
 
 
@@ -68,7 +69,7 @@ MainWindow::MainWindow(QWidget *parent)
         t2->start();
     });
     qDebug() << " work thread id:" << QThread::currentThreadId();
-    RecordQuat.w() =1; RecordQuat.x()=0;RecordQuat.y() = 0;RecordQuat.z() = 0;
+
 }
 
 MainWindow::~MainWindow()
@@ -133,7 +134,9 @@ void MainWindow::on_pushButton_clicked()
     if(g_pGlove0 != NULL){
         g_pGlove0->SetCalibMode(CALIB_AUTO);
         g_pGlove0->ResetQuat();
+        emit ResetQuat();
     }
+
 //    RecordQuat.w() = bluetooth.w();RecordQuat.x() = bluetooth.x();RecordQuat.y() = bluetooth.y();RecordQuat.z() = bluetooth.z();
 
 
