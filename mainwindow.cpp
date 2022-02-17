@@ -75,7 +75,8 @@ MainWindow::MainWindow(QWidget *parent)
     connect(this, &MainWindow::ResetQuat,ga, &GainAngles::resetQuat); //发送蓝牙修正
     connect(this, &MainWindow::starting, ga, &GainAngles::onCreateTimer); //开始采集数据手套的数据
     connect(ui->Vrep, &QPushButton::clicked, vs,&VrepSim::StartVrep);
-    connect(this, &MainWindow::updateAngles, vs, &VrepSim::updateAngles);
+    connect(this, &MainWindow::updateAngles, vs, &VrepSim::updateAnglesMain);
+    connect(ca,&CalcuateAngles::updateAngles, vs,&VrepSim::updateAnglesMain);
     t3->start();
 
     connect(ui->StartGain, &QPushButton::clicked, this, [=]()

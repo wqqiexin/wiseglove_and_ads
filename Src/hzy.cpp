@@ -314,6 +314,7 @@ void GainAngles::working()
 
 void CalcuateAngles::working(QVector<double>* Angles)
 {
+    bool sendif = false;
     Eigen::Matrix4d M = Eigen::MatrixXd::Identity(4,4);
 
     forearmzero.x() = (*Angles)[31];  //x
@@ -338,12 +339,9 @@ void CalcuateAngles::working(QVector<double>* Angles)
 
 
 
-
-
-
-    Eigen::VectorXd thetalistHand0 = Eigen::VectorXd(theta);
-    Eigen::VectorXd thetalistForearm0 = Eigen::VectorXd::Zero(3);
-    Eigen::VectorXd thetalistUparm0 = Eigen::VectorXd::Zero(3);
+    Eigen::VectorXd thetalistHand0 = thetalistHand;
+    Eigen::VectorXd thetalistForearm0 = thetalistForearm;
+    Eigen::VectorXd thetalistUparm0 = thetalistUparm;
     bool iRetHand = mr::IKinSpace(Slist1, M, handT, thetalistHand0, eomg, ev);
 
     bool iRetForearm = mr::IKinSpace(Slist2, M, forearmT, thetalistForearm0, eomg, ev);
@@ -378,13 +376,49 @@ void CalcuateAngles::working(QVector<double>* Angles)
         }
     }
 
-    if(std::abs(1-handT(2,2)) < 0.0137)
+    if(std::abs(1-handT(2,2)) < 0.0137){
         thetalistHand0 = Eigen::VectorXd::Zero(3);
-    if(std::abs(1-uparmT(2,2)) < 0.0137)
+        sendif = true;
+    }
+    if(std::abs(1-uparmT(2,2)) < 0.0137){
         thetalistUparm0 = Eigen::VectorXd::Zero(3);
-    if(std::abs(1-forearmT(2,2)) < 0.0137)
+        sendif = true;
+    }
+    if(std::abs(1-forearmT(2,2)) < 0.0137){
         thetalistForearm0 = Eigen::VectorXd::Zero(3);
-    std::cout << "thetalistHand:" << thetalistHand0*180/M_PI << std::endl;
+        sendif = true;
+    }
+
+    //检测是不是逆运动学解算差距太大或者变化幅度太小，这里至少要变化3°
+    if((thetalistHand0-thetalistHand).cwiseAbs().maxCoeff() < M_PI && (thetalistHand0-thetalistHand).cwiseAbs().maxCoeff() > 0.05236)
+    {
+        thetalistHand = thetalistHand0;
+        sendif = true;
+    }
+
+    if((thetalistUparm0-thetalistUparm).cwiseAbs().maxCoeff() < M_PI && (thetalistUparm0-thetalistUparm).cwiseAbs().maxCoeff() > 0.05236)
+    {
+        thetalistUparm = thetalistUparm0;
+        sendif = true;
+    }
+
+
+    if((thetalistForearm0-thetalistForearm).cwiseAbs().maxCoeff() < M_PI && (thetalistForearm0-thetalistForearm).cwiseAbs().maxCoeff() > 0.05236)
+    {
+        thetalistForearm = thetalistForearm0;
+        sendif = true;
+    }
+
+    if(sendif){
+        theta[0] = thetalistUparm[0];
+        theta[1] = thetalistUparm[1];
+        theta[2] = thetalistUparm[2]+thetalistForearm[0];
+        theta[3] = thetalistForearm[1];
+        theta[4] = thetalistForearm[2]+thetalistHand[0];
+        theta[5] = thetalistHand[1];
+        theta[6] = thetalistHand[2];
+        emit updateAngles(this->theta);
+    }
 
 
 }

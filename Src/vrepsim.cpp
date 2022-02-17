@@ -47,7 +47,7 @@ void VrepSim::StartVrep()
 }
 
 
-void VrepSim::updateAngles(QVector<double>& theta)
+void VrepSim::updateAnglesMain(QVector<double>& theta)
 {
     for(int i = 0; i < 7; i++)
     {
@@ -55,7 +55,7 @@ void VrepSim::updateAngles(QVector<double>& theta)
     }
 }
 
-void VrepSim::updateAngles(Eigen::VectorXd& theta)
+void VrepSim::updateAnglesCa(Eigen::VectorXd& theta)
 {
     for(int i = 0; i < 7; i++)
     {

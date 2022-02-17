@@ -77,7 +77,7 @@ public:
     explicit CalcuateAngles(QObject *parent = nullptr);
 
 signals:
-    void sendAngles(QVector<float>* Angles);
+    void updateAngles(QVector<double>& theta);
 private:
     QTimer* timer = nullptr;
     QTableWidget* tableWidget = nullptr;
@@ -92,6 +92,7 @@ private:
 //    Eigen::VectorXd thetalistForearm;
 public slots:
     void working(QVector<double>* Angles);
+
 
 
 };

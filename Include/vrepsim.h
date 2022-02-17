@@ -25,8 +25,8 @@ private:
 
 public slots:
     void StartVrep();
-    void updateAngles(QVector<double>& theta);
-    void updateAngles(Eigen::VectorXd& theta);
+    void updateAnglesMain(QVector<double>& theta);
+    void updateAnglesCa(Eigen::VectorXd& theta);
 };
 
 #endif // VREPSIM_H
