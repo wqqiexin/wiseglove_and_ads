@@ -9,6 +9,7 @@
 #include <QString>
 #include <QStandardItemModel>
 #include <iostream>
+
 /************指针变量***************/
 //wiseglove指针变量，并初始化
 WiseGlove *g_pGlove0 = NULL;
@@ -43,23 +44,28 @@ MainWindow::MainWindow(QWidget *parent)
     // 1. 创建子线程对象
     QThread* t1 = new QThread;
     QThread* t2 = new QThread;
-
+    QThread* t3 = new QThread;
 
     // 2. 创建任务类的对象
     GainAngles* ga = new GainAngles;
     CalcuateAngles* ca = new CalcuateAngles;
+    VrepSim* vs = new VrepSim;
 
     // 3. 将任务对象移动到某个子线程中
     ga->moveToThread(t1);
     ca->moveToThread(t2);
+    vs->moveToThread(t3);
 
 
-    connect(ga,&GainAngles::sendArray, this, &MainWindow::displayAngles);
-    connect(ga,&GainAngles::sendArray, ca, &CalcuateAngles::working);
-    connect(this,&MainWindow::sendName,ga,&GainAngles::openSerial);
-    connect(this, &MainWindow::ResetQuat,ga, &GainAngles::resetQuat);
-    connect(this, &MainWindow::starting, ga, &GainAngles::onCreateTimer);
 
+    connect(ga,&GainAngles::sendArray, this, &MainWindow::displayAngles); //将数据手套获取的角度发送给主界面进行显示
+    connect(ga,&GainAngles::sendArray, ca, &CalcuateAngles::working); //将数据手套获取的角度发送给ca来计算机械臂所需要的角度
+
+    connect(this,&MainWindow::sendName,ga,&GainAngles::openSerial); //发送串口名称
+    connect(this, &MainWindow::ResetQuat,ga, &GainAngles::resetQuat); //发送蓝牙修正
+    connect(this, &MainWindow::starting, ga, &GainAngles::onCreateTimer); //开始采集数据手套的数据
+    connect(ui->Vrep, &QPushButton::clicked, vs,&VrepSim::StartVrep);
+    t3->start();
 
     connect(ui->StartGain, &QPushButton::clicked, this, [=]()
     {
@@ -67,6 +73,7 @@ MainWindow::MainWindow(QWidget *parent)
         emit sendName(ui->SerialList->currentText());
         t1->start();
         t2->start();
+
     });
     qDebug() << " work thread id:" << QThread::currentThreadId();
 

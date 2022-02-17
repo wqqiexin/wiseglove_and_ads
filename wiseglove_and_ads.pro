@@ -11,17 +11,18 @@ RC_ICONS =xiaohui.ico
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
-    Src/RemoteApi/extApi.c \
-    Src/RemoteApi/extApiPlatform.c \
-    Src/RemoteApi/simLib.cpp \
     Src/hzy.cpp \
     Src/modern_robotics.cpp \
+    Src/vrepsim.cpp \
     main.cpp \
     mainwindow.cpp
 
 HEADERS += \
+    Include/RemoteApi/extApi.h \
+    Include/RemoteApi/extApiPlatform.h \
     Include/hzy.h \
     Include/modern_robotics.h \
+    Include/vrepsim.h \
     mainwindow.h
 
 FORMS += \
@@ -41,19 +42,21 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 INCLUDEPATH += $$PWD/Include
 
 INCLUDEPATH += $$PWD/Include/RemoteApi
-INCLUDEPATH += $$PWD/Li
+INCLUDEPATH += $$PWD/Lib
 DEPENDPATH += $$PWD/Lib
 INCLUDEPATH += C:\eigen-3.4.0
 win32:CONFIG(release, debug|release): LIBS += -L$$PWD/Dll/.. -lWISEGLOVE
 LIBS += $$PWD/Lib/WISEGLOVE.lib
 win32: LIBS += -L$$PWD/./ -lWISEGLOVE
-win32: LIBS += -L$$PWD/Lib/ -lremoteApiSharedLib-64
+
+
 
 DEFINES += NON_MATLAB_PARSING
 DEFINES += MAX_EXT_API_CONNECTIONS=
 DEFINES += DO_NOT_USE_SHARED_MEMORY
 
 
+win32: LIBS += -L$$PWD/Lib/ -lremoteApiSharedLib-64
 
-
-
+INCLUDEPATH += $$PWD/Lib
+DEPENDPATH += $$PWD/Lib

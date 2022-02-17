@@ -4,7 +4,7 @@
 #include <QMainWindow>
 #include <QTableWidget>
 #include "stdafx.h"
-
+#include "vrepsim.h"
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
