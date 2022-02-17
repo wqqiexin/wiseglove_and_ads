@@ -6,6 +6,7 @@
 #include <iostream>
 #include <QtDebug>
 #include <QApplication>
+#include "mainwindow.h"
 extern "C" {
     #include "extApi.h"
 }
@@ -24,7 +25,8 @@ private:
 
 public slots:
     void StartVrep();
-    void updateAngles(QVector<double>* theta);
+    void updateAngles(QVector<double>& theta);
+    void updateAngles(Eigen::VectorXd& theta);
 };
 
 #endif // VREPSIM_H

@@ -87,6 +87,7 @@ GainAngles::GainAngles(QObject *parent ): QObject(parent)
 {
     SerialPort = new QSerialPort(this);
 
+
 }
 
 void GainAngles::openSerial(QString Name)
@@ -141,8 +142,9 @@ CalcuateAngles::CalcuateAngles(QObject *parent ): QObject(parent)
     handT =  Eigen::Matrix4d().Identity();
     forearmT =  Eigen::Matrix4d().Identity();
     uparmT =  Eigen::Matrix4d().Identity();
-//    thetalistHand = Eigen::VectorXd::Zero(4);
-//    thetalistForearm = Eigen::VectorXd::Zero(4);
+    thetalistHand = Eigen::VectorXd::Zero(4);
+    thetalistForearm = Eigen::VectorXd::Zero(4);
+    thetalistUparm = Eigen::VectorXd::Zero(4);
 
 }
 
@@ -256,9 +258,10 @@ void GainAngles::working()
             uparm.z() = quat[10];
             Eigen::Quaterniond uparmconj = quatconj(uparm);
             Eigen::Quaterniond forearmconj = quatconj(forarm);
-            Eigen::Quaterniond uparmzero = quatmul(bluetoothModified,uparm);
 
-
+            //Eigen::Quaterniond uparmzero = quatmul(bluetoothModified,uparm);
+            //后面记得注释回来
+            Eigen::Quaterniond uparmzero = uparm;
             Eigen::Quaterniond forearmzero = quatmul(uparmconj, forarm);
             Eigen::Quaterniond handzero = quatmul(forearmconj, hand);
 
@@ -338,51 +341,50 @@ void CalcuateAngles::working(QVector<double>* Angles)
 
 
 
-    Eigen::VectorXd thetalistHand = Eigen::VectorXd::Zero(3);
-    Eigen::VectorXd thetalistForearm = Eigen::VectorXd::Zero(3);
-    Eigen::VectorXd thetalistUparm = Eigen::VectorXd::Zero(3);
-    bool iRetHand = mr::IKinSpace(Slist1, M, handT, thetalistHand, eomg, ev);
+    Eigen::VectorXd thetalistHand0 = Eigen::VectorXd(theta);
+    Eigen::VectorXd thetalistForearm0 = Eigen::VectorXd::Zero(3);
+    Eigen::VectorXd thetalistUparm0 = Eigen::VectorXd::Zero(3);
+    bool iRetHand = mr::IKinSpace(Slist1, M, handT, thetalistHand0, eomg, ev);
 
-    bool iRetForearm = mr::IKinSpace(Slist2, M, forearmT, thetalistForearm, eomg, ev);
+    bool iRetForearm = mr::IKinSpace(Slist2, M, forearmT, thetalistForearm0, eomg, ev);
 
-    bool iRetUparm = mr::IKinSpace(Slist3, M, uparmT, thetalistUparm, eomg, ev);
-
-    if(std::abs(1-handT(2,2)) < 0.01)
-        thetalistHand = Eigen::VectorXd::Zero(3);
-    if(std::abs(1-uparmT(2,2)) < 0.01)
-        thetalistUparm = Eigen::VectorXd::Zero(3);
-    if(std::abs(1-forearmT(2,2)) < 0.01)
-        thetalistForearm = Eigen::VectorXd::Zero(3);
-
+    bool iRetUparm = mr::IKinSpace(Slist3, M, uparmT, thetalistUparm0, eomg, ev);
 
     for(int i = 0; i < 3; i++)
     {
-        while(thetalistHand[i] > M_PI)
+        while(thetalistHand0[i] > M_PI)
         {
-            thetalistHand[i] -= 2*M_PI;
+            thetalistHand0[i] -= 2*M_PI;
         }
-        while(thetalistHand[i] < -M_PI)
+        while(thetalistHand0[i] < -M_PI)
         {
-            thetalistHand[i] += 2*M_PI;
+            thetalistHand0[i] += 2*M_PI;
         }
-        while(thetalistForearm[i] > M_PI)
+        while(thetalistForearm0[i] > M_PI)
         {
-            thetalistForearm[i] -= 2*M_PI;
+            thetalistForearm0[i] -= 2*M_PI;
         }
-        while(thetalistForearm[i] < -M_PI)
+        while(thetalistForearm0[i] < -M_PI)
         {
-            thetalistForearm[i] += 2*M_PI;
+            thetalistForearm0[i] += 2*M_PI;
         }
-        while(thetalistUparm[i] > M_PI)
+        while(thetalistUparm0[i] > M_PI)
         {
-            thetalistUparm[i] -= 2*M_PI;
+            thetalistUparm0[i] -= 2*M_PI;
         }
-        while(thetalistUparm[i] < -M_PI)
+        while(thetalistUparm0[i] < -M_PI)
         {
-            thetalistUparm[i] += 2*M_PI;
+            thetalistUparm0[i] += 2*M_PI;
         }
     }
-    std::cout << "thetalistHand:" << thetalistHand*180/M_PI << std::endl;
+
+    if(std::abs(1-handT(2,2)) < 0.0137)
+        thetalistHand0 = Eigen::VectorXd::Zero(3);
+    if(std::abs(1-uparmT(2,2)) < 0.0137)
+        thetalistUparm0 = Eigen::VectorXd::Zero(3);
+    if(std::abs(1-forearmT(2,2)) < 0.0137)
+        thetalistForearm0 = Eigen::VectorXd::Zero(3);
+    std::cout << "thetalistHand:" << thetalistHand0*180/M_PI << std::endl;
 
 
 }

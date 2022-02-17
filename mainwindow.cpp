@@ -31,12 +31,22 @@ MainWindow::MainWindow(QWidget *parent)
                          "uparm.x","uparm.y","uparm.z","uparm.w","forearm.x","forearm.y","forearm.z","forearm.w",
                          "hand.x","hand.y","hand.z","hand.w","forearmzero.x","forearmzero.y","forearmzero.z","forearmzero.w",
                         "handzero.x","handzero.y","handzero.z","handzero.w","bluetooth.x","bluetooth.y","bluetoothmodified.z","bluetooth.w","bluetoothmodified.x","bluetoothmodified.y","bluetoothmodified.z","bluetoothmodified.w"};
+    QString AngelsList[7] = {"Theta1","Theta2","Theta3","Theta4","Theta5","Theta6","Theta7"};
     ui->setupUi(this);
 
     ui->tableWidget->setRowCount(47);
     ui->tableWidget->setColumnCount(3);
+    ui->AnglesList->setRowCount(7);
+    ui->AnglesList->setColumnCount(2);
+
     for(int i= 0; i<43; i++){
         ui->tableWidget->setItem(i,0,new QTableWidgetItem(thumb[i]));
+    }
+    for(int i= 0; i<7; i++){
+        ui->AnglesList->setItem(i,0,new QTableWidgetItem(AngelsList[i]));
+        ui->AnglesList->setItem(i,1,new QTableWidgetItem(QString("%1").arg(0)));
+        ui->AnglesList->setRowHeight(i,1);
+
     }
     Serial_Init();
 
@@ -65,6 +75,7 @@ MainWindow::MainWindow(QWidget *parent)
     connect(this, &MainWindow::ResetQuat,ga, &GainAngles::resetQuat); //发送蓝牙修正
     connect(this, &MainWindow::starting, ga, &GainAngles::onCreateTimer); //开始采集数据手套的数据
     connect(ui->Vrep, &QPushButton::clicked, vs,&VrepSim::StartVrep);
+    connect(this, &MainWindow::updateAngles, vs, &VrepSim::updateAngles);
     t3->start();
 
     connect(ui->StartGain, &QPushButton::clicked, this, [=]()
@@ -201,5 +212,16 @@ void MainWindow::displayAngles(QVector<double>* Angles)
     for(int i= 0; i<43; i++){
         ui->tableWidget->setItem(i,1,new QTableWidgetItem(QString("%1").arg((*Angles)[i])));
     }
+}
+
+
+void MainWindow::on_updateAngles_clicked()
+{
+    for(int i = 0; i < 7; i++)
+    {
+        theta[i] = ui->AnglesList->item(i,1)->text().toDouble();
+        qDebug() << theta[i];
+    }
+    emit updateAngles(theta);
 }
 

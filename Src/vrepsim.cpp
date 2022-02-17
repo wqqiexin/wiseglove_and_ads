@@ -47,10 +47,19 @@ void VrepSim::StartVrep()
 }
 
 
-void VrepSim::updateAngles(QVector<double>* theta)
+void VrepSim::updateAngles(QVector<double>& theta)
 {
     for(int i = 0; i < 7; i++)
     {
-        Angles[i] = (*theta)[i];
+        Angles[i] = theta[i];
     }
 }
+
+void VrepSim::updateAngles(Eigen::VectorXd& theta)
+{
+    for(int i = 0; i < 7; i++)
+    {
+        Angles[i] = theta[i];
+    }
+}
+

@@ -26,16 +26,21 @@ private slots:
 
     void displayAngles(QVector<double>* Angles);
 
+    void on_updateAngles_clicked();
+
 private:
     Ui::MainWindow *ui;
     QSerialPort* SerialPort;
     Eigen::Quaterniond uparm,forarm, hand, bluetooth,handzero,forearmzero,bluetoothmodified;
     Eigen::Quaterniond RecordQuat;
     const Eigen::Quaterniond QuatInit = Eigen::Quaterniond (1.0,0,0,0);
+    QVector<double> theta = {0,0,0,0,0,0,0};
 
 signals:
     void starting(WiseGlove * g_pGlove0, QTableWidget * tableWidget);
     void sendName(QString serialName);
     void ResetQuat();
+    void updateAngles(QVector<double>& theta);
+
 };
 #endif // MAINWINDOW_H

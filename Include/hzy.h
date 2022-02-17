@@ -87,7 +87,8 @@ private:
     double eomg = 0.01;
     double ev = 0.001;
     Eigen::Quaterniond recordQuat = Eigen::Quaterniond(1,0,0,0);
-//    Eigen::VectorXd thetalistHand;
+    Eigen::VectorXd thetalistHand, thetalistForearm, thetalistUparm;
+    QVector<double> theta = {0,0,0,0,0,0,0};
 //    Eigen::VectorXd thetalistForearm;
 public slots:
     void working(QVector<double>* Angles);
