@@ -34,7 +34,7 @@ void VrepSim::StartVrep()
     while (simxGetConnectionId(clientID) != -1)
     {
         for(int i = 0; i < 7; i++)
-        {
+        {   //这里必须是弧度制
             simxSetJointTargetPosition(clientID, LBR_iiwa_7_R800_joint[i], Angles[i], simx_opmode_oneshot);
 
         }
@@ -51,7 +51,7 @@ void VrepSim::updateAnglesMain(QVector<double>& theta)
 {
     for(int i = 0; i < 7; i++)
     {
-        Angles[i] = theta[i];
+        Angles[i] = theta[i]*M_PI/180;
     }
 }
 
@@ -59,7 +59,7 @@ void VrepSim::updateAnglesCa(Eigen::VectorXd& theta)
 {
     for(int i = 0; i < 7; i++)
     {
-        Angles[i] = theta[i];
+        Angles[i] = theta[i]*M_PI/180;
     }
 }
 
